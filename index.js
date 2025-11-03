@@ -31,6 +31,27 @@ async function run() {
 
         const db = client.db('smart_db')
         const productsCollection = db.collection('products');
+        const bidCollection = db.collection('bids')
+        const userCollection =db.collection('users')
+
+
+        app.post('/users',async (req,res) =>{
+            const newUser =req.body;
+
+            const email =req.body.email
+            const query ={email:email}
+            const existingUser =await userCollection.findOne(query)
+            if(existingUser){
+                res.send({message:'user already exits.do not need to insert again'})
+            }
+            else{
+
+                const result =await userCollection.insertOne(newUser)
+                console.log(result)
+                res.send(result)
+            }
+
+        })
 
         app.get('/products', async (req, res) => {
 
@@ -43,10 +64,10 @@ async function run() {
 
             console.log(req.query)
 
-            const email =req.query.email;
-            const query ={}
-            if(email){
-                query.email=email;
+            const email = req.query.email;
+            const query = {}
+            if (email) {
+                query.email = email;
             }
 
 
@@ -92,6 +113,24 @@ async function run() {
             res.send(result)
         })
 
+        // bids related api
+        app.get('/bids', async (req, res) => {
+            const email = req.query.email;
+            const query = {}
+            if (email) {
+                query.buyer_email = email;
+            }
+
+            const cursor = bidCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result)
+        })
+
+        app.post('/bids',async(req,res)=>{
+            const newBid=req.body;
+            const result =await bidCollection.insertOne(newBid);
+            res.send(result)
+        })
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
