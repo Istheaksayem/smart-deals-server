@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 
-// const uri = "mongodb+srv://smartdbUser:0rAx4DT7RVOGsvdL@cluster0.ba90y0b.mongodb.net/?appName=Cluster0";
+
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ba90y0b.mongodb.net/?appName=Cluster0`;
