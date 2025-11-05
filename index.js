@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const app = express()
 const port = process.env.PORT || 3000;
+
 
 // middleware
 
@@ -10,7 +12,12 @@ app.use(cors());
 app.use(express.json());
 
 
-const uri = "mongodb+srv://smartdbUser:0rAx4DT7RVOGsvdL@cluster0.ba90y0b.mongodb.net/?appName=Cluster0";
+// const uri = "mongodb+srv://smartdbUser:0rAx4DT7RVOGsvdL@cluster0.ba90y0b.mongodb.net/?appName=Cluster0";
+
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ba90y0b.mongodb.net/?appName=Cluster0`;
+
+
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -19,7 +26,7 @@ const client = new MongoClient(uri, {
     }
 });
 
-// 0rAx4DT7RVOGsvdL
+
 
 app.get('/', (req, res) => {
     res.send('smart server is running')
@@ -153,6 +160,14 @@ async function run() {
 
             const cursor =bidCollection.find(query);
             const result = await cursor.toArray();
+            res.send(result)
+        })
+
+        // bids delete
+        app.delete('/bids/:id',async(req,res) =>{
+            const id =req.params.id;
+            const query ={_id: new ObjectId(id)}
+            const result =await bidCollection.deleteOne(query)
             res.send(result)
         })
 
