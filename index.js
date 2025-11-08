@@ -3,7 +3,15 @@ const cors = require('cors');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const app = express()
+const admin = require("firebase-admin");
 const port = process.env.PORT || 3000;
+
+const serviceAccount = require("./smart-deals-f7552-firebase-adminsdk-fbsvc-7b2123c569.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 
 
 // middleware
@@ -12,6 +20,36 @@ app.use(cors());
 app.use(express.json());
 
 
+
+// const logger =(req,res,next)=>{
+//     console.log('logging info')
+//     next()
+// }
+
+const verifyFireBaseToken =async(req,res,next)=>{
+// console.log('in verify middleware',req.headers.authorization)
+if(!req.headers.authorization){
+// do not allow ro go
+return res.status(401).send({message:'unauthorized access'})
+}
+const token =req.headers.authorization.split(' ')[1];
+if(!token){
+    return res.status(401).send({message:'unauthorized access'})
+}
+// verify id token
+
+try{
+   const userInfo = await admin.auth().verifyIdToken(token);
+   req.token_email =userInfo.email;
+//    console.log('after token validation',token_email)
+        next()
+}
+catch{
+    return res.status(401).send({message:'unauthorized access'})
+}
+
+
+}
 
 
 
@@ -128,10 +166,19 @@ async function run() {
         })
 
         // bids related api
-        app.get('/bids', async (req, res) => {
+        app.get('/bids',verifyFireBaseToken, async (req, res) => {
+
+            
+            console.log('headers',req)
+
             const email = req.query.email;
+            // console.log(req.token_email)
             const query = {}
             if (email) {
+              if(email !==req.token_email){
+                return res.status(403).send({message:'forbidden access'})
+              }
+
                 query.buyer_email = email;
             }
 
@@ -141,7 +188,7 @@ async function run() {
         })
 
         
-        app.get('/products/bids/:productId',async(req,res)=>{
+        app.get('/products/bids/:productId' ,verifyFireBaseToken,async(req,res)=>{
             const product =req.params.productId;
             console.log(product)
             const query ={product:product}
@@ -165,6 +212,8 @@ async function run() {
 
         // bids delete
         app.delete('/bids/:id',async(req,res) =>{
+
+            
             const id =req.params.id;
             const query ={_id: new ObjectId(id)}
             const result =await bidCollection.deleteOne(query)
